@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:8.0
+    container_name: mongodb
+    env_file:
+      - .env
+    command: ["mongod", "--config", "/etc/mongo/mongod.conf", "--replSet", "${MONGO_REPLSET}"]
+    volumes:
+      - ${MONGO_DATA_PATH}:/data/db
+      - ./mongo_conf:/etc/mongo
+      - ./initdb.d:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "3"
+  mongo-init:
+    image: mongo:8.0
+    container_name: mongo-init
+    restart: "no"
+    depends_on:
+      - mongodb
+    env_file:
+      - .env
+    volumes:
+      - ./scripts/init-replica.sh:/scripts/init-replica.sh
+    entrypoint: [ "bash", "/scripts/init-replica.sh" ]

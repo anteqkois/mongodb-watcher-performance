@@ -1,26 +1,47 @@
-console.log("Try npm run lint/fix!");
+import 'dotenv/config';
+import {ChangeStream, Collection} from 'mongodb';
+import {MongoDbClient} from './client';
 
-const longString = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer ut aliquet diam.';
+let insertInterval: NodeJS.Timeout;
+let testCollection: Collection;
+let testCollectionStream: ChangeStream;
 
-const trailing = 'Semicolon'
+const startInsertInterval = () => {
+  insertInterval = setInterval(async () => {
+    await testCollection.insertOne({
+      test: 'test',
+    });
+  }, 1000);
+};
+const main = async () => {
+  const mongoClient = new MongoDbClient({
+    connectString: process.env.MONGO_URL!,
+    id: 'main',
+  });
+  testCollection = mongoClient.client
+    .db(process.env.MONGO_DB!)
+    .collection('test');
 
-			const why={am:'I tabbed?'};
+  startInsertInterval();
 
-const iWish = "I didn't have a trailing space..."; 
+  console.log(await testCollection.countDocuments());
 
-const sicilian = true;;
+  testCollectionStream = testCollection.watch();
+  testCollectionStream.on('change', change => {
+    console.log('Change detected:', change);
+  });
+};
 
-const vizzini = (!!sicilian) ? !!!sicilian : sicilian;
+main()
+  .then()
+  .catch(err => {
+    console.log(err);
+    process.exit(1);
+  });
 
-const re = /foo   bar/;
-
-export function doSomeStuff(withThis: string, andThat: string, andThose: string[]) {
-    //function on one line
-    if(!Boolean(andThose.length)) {return false;}
-    console.log(withThis);
-    console.log(andThat);
-    console.dir(andThose);
-    console.log(longString, trailing, why, iWish, vizzini, re);
-    return;
-}
-// TODO: more examples
+process.on('SIGINT', async () => {
+  console.log('Shutting down...');
+  clearInterval(insertInterval);
+  testCollectionStream.close();
+  process.exit(0);
+});

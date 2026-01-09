@@ -20,8 +20,12 @@
     "posttest": "npm run lint"
   },
   "devDependencies": {
+    "@types/node": "^22.7.5",
     "gts": "^7.0.0",
-    "typescript": "^5.6.3",
-    "@types/node": "^22.7.5"
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "mongodb": "^7.0.0"
   }
 }
